@@ -40,3 +40,22 @@ tzdata==2025.2
 urllib3==2.5.0
 watchdog==6.0.0 ; sys_platform != 'darwin'
 scikit-learn
+
+# Additional commonly required libraries
+joblib
+scipy
+xlsxwriter
+pycryptodome
+pdfplumber
+PyPDF2
+pdfminer.six
+pillow
+pytesseract
+pikepdf
+PyMuPDF
+pypdfium2
+lxml
+Deprecated
+wrapt
+fsspec
+s3fs
