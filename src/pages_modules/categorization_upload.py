@@ -15,9 +15,7 @@ from src.utils.display import normalize_df_for_display
 
 def render_page():
     st.markdown("<div style='font-size:1.2em; color:#444; margin-bottom:18px;'> 📥 Upload Categorization File</div>", unsafe_allow_html=True)
-    import uuid
-    unique_key = f"category_upload_file_{uuid.uuid4()}"
-    file = st.file_uploader("Upload CSV/Excel", type=["csv", "xlsx"], key=unique_key)
+    file = st.file_uploader("Upload CSV/Excel", type=["csv", "xlsx"], help="Upload Excel or CSV files with spend transaction data")
     if file:
         try:
             df = pd.read_csv(file) if file.name.endswith("csv") else pd.read_excel(file)
