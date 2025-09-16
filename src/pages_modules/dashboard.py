@@ -131,7 +131,11 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     # Apply date filter
     if 'invoice_date_filter' in st.session_state and st.session_state.invoice_date_filter:
         if 'invoice_date' in filtered_df.columns:
-            filtered_df = filtered_df[filtered_df['invoice_date'].isin(st.session_state.invoice_date_filter)]
+            date_filter = st.session_state.invoice_date_filter
+            # Convert single date to list for isin()
+            if not isinstance(date_filter, list):
+                date_filter = [date_filter]
+            filtered_df = filtered_df[filtered_df['invoice_date'].isin(date_filter)]
 
     # Apply region filter
     if 'region_filter' in st.session_state and st.session_state.region_filter:
