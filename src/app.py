@@ -61,7 +61,7 @@ def get_logo_img_tag():
         return f"<img src='data:image/png;base64,{encoded_logo}' style='height:20px; margin-right:20px; vertical-align:middle;'>"
     return ""
 def get_contact_img_tag():
-    contact_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'context', 'Contact.png')
+    contact_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'context', 'Contact.PNG')
     if os.path.exists(contact_path):
         import base64
         with open(contact_path, "rb") as image_file:
