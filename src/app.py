@@ -26,11 +26,11 @@ body, [data-testid="stAppViewContainer"], [data-testid="stAppViewBlockContainer"
 /* 2) Style any buttons placed in the sidebar */
  [data-testid="stSidebar"] .stButton > button {
         width: 100%;
-        padding: 0.6rem 1rem;
+        padding: 0rem 0.5rem;
         color: #fff;
         font-weight: 600;
         text-align: left;
-        transition: transform 0.02s ease-in-out;
+        transition: transform 0.01s ease-in-out;
         background: none !important;
         border: none !important;
         box-shadow: none !important;
@@ -154,17 +154,38 @@ def sidebar_navigation():
             if st.button("🏠  Dashboard", key="nav_dashboard", width='stretch'):
                 st.session_state.selected_page = "dashboard"
                 st.rerun()
-
             # Data Upload
             if permissions.get("can_upload_data", False):
                 if st.button("📤  Upload Spend Data", key="nav_upload",width='stretch'):
                     st.session_state.selected_page = "upload"
                     st.rerun()
-
-            # Categorization    
+                    
+            # Categorization upload/import
+            if permissions.get("can_manage_master_data", False):
+                if st.button("📥 Categorization Upload", key="nav_categorization_upload"):
+                    st.session_state.selected_page = "categorization_upload"
+                    st.rerun()
+                    
+            # Categorization
             if st.button("📂 Categorize Items", key="nav_categorize",width='stretch'):
                     st.session_state.selected_page = "categorize"
                     st.rerun()
+
+            # Error Resolution
+            if permissions.get("can_resolve_errors", False):
+                if st.button("🔧 Error Resolution", key="nav_errors", width='stretch'):
+                    st.session_state.selected_page = "errors"
+                    st.rerun()
+
+            # Rules Management
+            if permissions.get("can_manage_rules", False):
+                if st.button("⚙️ Rules", key="nav_rules", width='stretch'):
+                    st.session_state.selected_page = "rules"
+                    st.rerun()
+            # Categories
+            if st.button("📂 Category Management", key="nav_categories",width='stretch'):
+                st.session_state.selected_page = "categories"
+                st.rerun()
 
             # User Management
             if permissions.get("can_manage_users", False):
@@ -172,38 +193,14 @@ def sidebar_navigation():
                     st.session_state.selected_page = "users"
                     st.rerun()
             
-            # Rules Management
-            if permissions.get("can_manage_rules", False):
-                if st.button("⚙️ Rules", key="nav_rules", width='stretch'):
-                    st.session_state.selected_page = "rules"
-                    st.rerun()
-            
-            # Error Resolution
-            if permissions.get("can_resolve_errors", False):
-                if st.button("🔧 Error Resolution", key="nav_errors", width='stretch'):
-                    st.session_state.selected_page = "errors"
-                    st.rerun()
-            
             # Master Data Management (split into Vendors and Categories)
             #if permissions.get("can_manage_master_data", False):
             #    if st.button("�  Vendors", key="nav_vendors", width='stretch'):
             #        st.session_state.selected_page = "vendors"
             #        st.rerun()
-            
-
-            # Categorization upload/import
-            if permissions.get("can_manage_master_data", False):
-                if st.button("📥 Categorization Upload", key="nav_categorization_upload"):
-                    st.session_state.selected_page = "categorization_upload"
-                    st.rerun()
-            
-            # Categories
-            if st.button("📂 Categories", key="nav_categories",width='stretch'):
-                st.session_state.selected_page = "categories"
-                st.rerun()
 
             # Logout button
-            st.markdown("---")
+            st.markdown("<hr style='margin:6px 0 12px 0; border-top:1px solid #fff; opacity:0.25;'>", unsafe_allow_html=True)
             if st.button("🚪 Logout", key="logout",width='stretch'):
                 auth_service.logout()
                 st.rerun()
@@ -281,7 +278,7 @@ def main():
         render_page()
     
     elif selected_page == "rules":
-        from src.pages_modules.rules import render_page
+        from src.pages_modules.rule_management import render_page
         logger.info("Rendering rules management page")
         render_page()
     

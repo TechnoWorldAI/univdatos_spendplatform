@@ -24,4 +24,3 @@ def render_page():
         st.success("Edits saved to category_data table!")
 
 # Ensure the UI is shown when the page loads
-render_page()

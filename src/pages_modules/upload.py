@@ -7,7 +7,8 @@ from src.utils.db_simple import get_db_connection
 from src.config import config
 from src.utils.debug import debug_logger, show_error_block, safe_execute
 from .db import insert_data
-
+import sqlite3
+from datetime import datetime
 
 def render_page() -> None:
     """Render the data upload page."""
@@ -39,12 +40,11 @@ def render_page() -> None:
             st.success(f"✅ File uploaded successfully! {len(df)} rows loaded.")
             
             # Preview data
-            with st.expander("📋 Data Preview"):
-                try:
-                    from src.utils.display import normalize_df_for_display
-                    st.dataframe(normalize_df_for_display(df.head(10)))
-                except Exception:
-                    st.dataframe(df.head(10))
+           
+            try:
+                render_styled_table(df)
+            except Exception:
+                st.dataframe(df.head(10))
             
             # Validation
             debug_logger.debug("Starting data validation")
@@ -61,7 +61,7 @@ def render_page() -> None:
                 if st.button("🚀 Process Data"):
                     debug_logger.info("Processing data", {"rows": len(df)})
                     safe_execute(
-                        process_data, df,
+                        process_data, df, validation_results,
                         error_title="Failed to Process Data",
                         show_ui_error=True
                     )
@@ -86,11 +86,11 @@ def validate_data(df: pd.DataFrame) -> dict:
     # Data quality checks
     # Negative value check
     negative_count = 0
-    if 'item_invoice_value' in df.columns:
-        negative_values = df[df['item_invoice_value'] < 0]
+    if 'total_amount' in df.columns:
+        negative_values = df[df['total_amount'] < 0]
         negative_count = len(negative_values)
         if negative_count > 0:
-            results['errors'].append(f"Found {negative_count} negative item_invoice_value(s)")
+            results['errors'].append(f"Found {negative_count} negative total_amount(s)")
 
     # Null value check
     null_count = int(df.isnull().sum().sum())
@@ -110,7 +110,8 @@ def validate_data(df: pd.DataFrame) -> dict:
         'total_rows': len(df),
         'total_columns': len(df.columns),
         'negative_values': negative_count,
-        'missing_values': null_count
+        'missing_values': null_count,
+        'missing_suppliers': missing_suppliers_count
     }
 
     return results
@@ -118,19 +119,24 @@ def validate_data(df: pd.DataFrame) -> dict:
 
 def render_validation_results(results: dict) -> None:
     """Render validation results."""
-
-    st.markdown("<div style='font-size:1.0em; color:#444; margin-bottom:18px;'>📋 Validation Results </div>", unsafe_allow_html=True)
+    st.markdown("<hr style='border:0.5px solid #D8D8D8; margin:0px;'>", unsafe_allow_html=True)
+    #st.markdown("<div style='font-size:1.0em; color:#444; margin-bottom:18px;'>📋 Validation Results </div>", unsafe_allow_html=True)
     # Summary
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
+    card_style = "background-color:#f8f9fa; border-radius:10px; box-shadow:0 2px 8px #e0e0e0; padding:18px; margin-bottom:8px; text-align:center;"
     with col1:
-        st.metric("Total Rows", results['summary']['total_rows'])
+        st.markdown(f"<div style='{card_style}'><span style='font-size:1.0em; color:#333;'>Total Rows</span><br><span style='font-size:1.3em; font-weight:bold; color:#007bff;'>{results['summary']['total_rows']}</span></div>", unsafe_allow_html=True)
     with col2:
-        st.metric("Total Columns", results['summary']['total_columns'])
+        st.markdown(f"<div style='{card_style}'><span style='font-size:1.0em; color:#333;'>Total Columns</span><br><span style='font-size:1.3em; font-weight:bold; color:#007bff;'>{results['summary']['total_columns']}</span></div>", unsafe_allow_html=True)
     with col3:
-        st.metric("Negative Values", results['summary']['negative_values'])
+        st.markdown(f"<div style='{card_style}'><span style='font-size:1.0em; color:#333;'>Negative Values</span><br><span style='font-size:1.3em; font-weight:bold; color:#dc3545;'>{results['summary']['negative_values']}</span></div>", unsafe_allow_html=True)
     with col4:
-        st.metric("Missing Values", results['summary']['missing_values'])
-    
+        st.markdown(f"<div style='{card_style}'><span style='font-size:1.0em; color:#333;'>Missing Values</span><br><span style='font-size:1.3em; font-weight:bold; color:#ffc107;'>{results['summary']['missing_values']}</span></div>", unsafe_allow_html=True)
+    with col5:
+        st.markdown(f"<div style='{card_style}'><span style='font-size:1.0em; color:#333;'>Missing Suppliers</span><br><span style='font-size:1.3em; font-weight:bold; color:#17a2b8;'>{results['summary']['missing_suppliers']}</span></div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:1.0em; color:#444; margin-bottom:18px;'> </div>", unsafe_allow_html=True)
+    st.markdown("<hr style='border:0.5px solid #D8D8D8; margin:0px;'>", unsafe_allow_html=True)
+    # Display Error Management Tabs
     # Errors
     if results['errors']:
         st.error("❌ Validation Errors:")
@@ -139,15 +145,72 @@ def render_validation_results(results: dict) -> None:
     
     # Warnings
     if results['warnings']:
-        st.warning("⚠️ Data Quality Warnings:")
-        for warning in results['warnings']:
-            st.warning(f"• {warning}")
+        st.warning("⚠️ Data Quality Warnings:\n" + "\n".join([f" {w}" for w in results['warnings']]))
     
     if results['is_valid'] and not results['warnings']:
         st.success("✅ All validations passed!")
+    
+    conn = sqlite3.connect('spend_platform.db')
+    cursor = conn.cursor()
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # Insert errors
+    for error in results.get('errors', []):
+        cursor.execute("""
+            INSERT INTO error_table (error_transaction, error_type, error_message, error_status, error_timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        """, ("Spend Upload", "Error", error, "Open", now_str))
+    # Insert warnings
+    for warning in results.get('warnings', []):
+        cursor.execute("""
+            INSERT INTO error_table (error_transaction, error_type, error_message, error_status, error_timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        """, ("Spend Upload", "Warning", warning, "Open", now_str))
+    conn.commit()
+    conn.close()
+def render_styled_table(df):
 
 
-def process_data(df: pd.DataFrame) -> None:
-    """Process and save validated data to database."""
+    styled_df = (
+        df.style
+        .hide(axis="index")
+        .set_table_styles([
+            {"selector": "th", "props": [
+                ("background-color", "#1D2951"),
+                ("color", "white"),
+                ("text-align", "center"),
+                ("border", "1px solid black"),
+                ("padding", "1px"),
+                ("font-size", "0.85em"),
+                ("position", "sticky"),
+                ("top", "2"),
+                ("z-index", "2"),
+                ("width", "8%")
+            ]},
+            {"selector": "td", "props": [
+                ("border", "1px solid black"),
+                ("text-align", "center"),
+                ("padding", "4px"),
+                ("font-size", "0.8em")
+            ]},
+            {"selector": "table", "props": [
+                ("border-collapse", "collapse"),
+                ("border-radius", "6px"),
+                ("width", "100%")
+            ]}
+        ], overwrite=False)  # 👈 ensure it merges styles properly
+    )
+
+    # Wrap with scrollable container
+    html_table = styled_df.to_html(escape=False)
+    scrollable_html = f"""
+    <div style="max-height:400px; overflow-y:auto; overflow-x:auto; border:1px solid #ddd; padding:5px;">
+        {html_table}
+    </div>
+    """
+    st.write(scrollable_html, unsafe_allow_html=True)
+
+def process_data(df: pd.DataFrame, validation_results: dict = None) -> None:
+    """Process and save validated data to database. Also log validation results to error_table."""
     insert_data("spend_data", df)
+    # Insert validation errors/warnings into error_table
     st.success("Spend data saved!")

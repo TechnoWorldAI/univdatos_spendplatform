@@ -72,7 +72,6 @@ def render_page() -> None:
         debug_logger.exception("Error rendering reports page", e)
         show_error_block("Reports Page Error", e)
 
-
 def render_filters(df: pd.DataFrame) -> None:
     """Render filter controls."""
     col1, col2, col3, col4, col5 = st.columns(5)
@@ -125,7 +124,6 @@ def render_filters(df: pd.DataFrame) -> None:
             key="category_2_filter"
         )
 
-
 def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     """Apply filters based on session state."""
     filtered_df = df.copy()
@@ -133,7 +131,11 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     # Apply date filter
     if 'invoice_date_filter' in st.session_state and st.session_state.invoice_date_filter:
         if 'invoice_date' in filtered_df.columns:
-            filtered_df = filtered_df[filtered_df['invoice_date'].isin(st.session_state.invoice_date_filter)]
+            date_filter = st.session_state.invoice_date_filter
+            # Convert single date to list for isin()
+            if not isinstance(date_filter, list):
+                date_filter = [date_filter]
+            filtered_df = filtered_df[filtered_df['invoice_date'].isin(date_filter)]
 
     # Apply region filter
     if 'region_filter' in st.session_state and st.session_state.region_filter:
@@ -156,7 +158,6 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
             filtered_df = filtered_df[filtered_df['category_2'].isin(st.session_state.category_2_filter)]
 
     return filtered_df
-
 
 def render_spend_summary(df: pd.DataFrame) -> None:
     """Render spend summary metrics."""
@@ -182,7 +183,9 @@ def render_spend_summary(df: pd.DataFrame) -> None:
         </div>
     """
 
-    total_spend = df['unit_price'].sum()
+    total_spend = float(df.filter(like="total_amount").sum().sum())
+    if isinstance(total_spend, pd.Series):
+            total_spend = total_spend.sum()
     with col1:
         st.markdown(
             card_style.format(title="Total Spend", value=f"${total_spend:,.2f}"),
@@ -222,13 +225,15 @@ def render_spend_summary(df: pd.DataFrame) -> None:
 
 def render_spend_by_region(df: pd.DataFrame) -> None:
     """Render spend by region pie chart."""
+    
     if 'region' in df.columns:
-        region_spend = df.groupby('region')['unit_price'].sum().reset_index()
+        region_spend = df.groupby('region')['total_amount'].sum().reset_index()
         fig = px.pie(
-            region_spend, 
-            values='unit_price', 
+            region_spend,
+            values='total_amount',
             names='region',
-            title="Spend by Region"
+            title="Spend by Region",
+            color_discrete_sequence=['#355C7D']
         )
         # Move legend to bottom
         fig.update_layout(
@@ -253,15 +258,16 @@ def render_spend_by_region(df: pd.DataFrame) -> None:
 
 def render_top_supplier(df: pd.DataFrame) -> None:
     """Render top suppliers bar chart."""
-    top_suppliers = df.groupby('supplier_details')['unit_price'].sum().nlargest(5).reset_index()
+    top_suppliers = df.groupby('supplier_details')['total_amount'].sum().nlargest(5).reset_index()
     fig = px.bar(
         top_suppliers,
-        x='unit_price',
+        x='total_amount',
         y='supplier_details',
         orientation='h',
-        title="Top 5 Suppliers by Spend"
+        title="Top 5 Suppliers by Spend",
+        color_discrete_sequence=['#003F5C']
     )
-    max_value = top_suppliers['unit_price'].max()
+    max_value = top_suppliers['total_amount'].max()
     fig.update_layout(
         xaxis=dict(
             range=[0, max_value * 1.1],
@@ -287,33 +293,31 @@ def render_top_supplier(df: pd.DataFrame) -> None:
 
 def render_top_category(df: pd.DataFrame) -> None:
     """Render top suppliers bar chart."""
-    top_categories = df.groupby('category_2')['unit_price'].sum().nlargest(5).reset_index()
-    fig = px.bar(
+    top_categories = df.groupby('category_2')['total_amount'].sum().nlargest(5).reset_index()
+    fig = px.pie(
         top_categories,
-        x='unit_price',
-        y='category_2',
-        orientation='h',
-        title="Top 5 Categories by Spend"
+        values='total_amount',
+        names='category_2',
+        title="Top 5 Categories by Spend",
+        color_discrete_sequence=['#2F8BCC'],
+        hole=0.5
     )
-    max_value = top_categories['unit_price'].max()
     fig.update_layout(
-        xaxis=dict(
-            range=[0, max_value * 1.1],
-            title_text="",
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.1,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=10)
         ),
-        yaxis=dict(
-            categoryorder='total ascending',
-            title_text="",
-            ticklabelposition="outside left",
-            automargin=True
-        ),  # biggest at top
         title=dict(
-            x=0.5,                # center align title horizontally
+            x=0.5,
             xanchor='center',
             font=dict(size=14)
         ),
-        margin=dict(l=80, r=20, t=80, b=40),  # cut margins
-        height=280,   # smaller chart height
+        margin=dict(l=0, r=0, t=80, b=40),
+        height=280,
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -321,19 +325,20 @@ def render_spend_monthly(df: pd.DataFrame) -> None:
     """Render spend trend over time."""
     if 'invoice_date' in df.columns:
         df['invoice_date'] = pd.to_datetime(df['invoice_date'])
-    monthly_spend = df.groupby(df['invoice_date'].dt.to_period('M'))['unit_price'].sum().reset_index()
+    monthly_spend = df.groupby(df['invoice_date'].dt.to_period('M'))['total_amount'].sum().reset_index()
     # Convert 'invoice_date' to mmm-yyyy format
     monthly_spend['invoice_date'] = monthly_spend['invoice_date'].dt.strftime('%b-%Y')
-    # Convert unit_price to millions
-    monthly_spend['unit_price'] = (monthly_spend['unit_price'] / 1_000_000).round(0).astype(int)
+    # Convert total_amount to millions
+    monthly_spend['total_amount'] = (monthly_spend['total_amount'] / 1_000_000).round(0).astype(int)
 
-    max_value = monthly_spend['unit_price'].max()
+    max_value = monthly_spend['total_amount'].max()
     fig = px.line(
         monthly_spend,
         x='invoice_date',
-        y='unit_price',
+        y='total_amount',
         title="Monthly Spend Trend",
-        markers=True
+        markers=True,
+        color_discrete_sequence=['#868070']
     )
     fig.update_traces(
         line=dict(dash='solid', width=3),   # solid thick line
@@ -358,48 +363,18 @@ def render_spend_monthly(df: pd.DataFrame) -> None:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-def render_spend_analysis(df: pd.DataFrame) -> None:
-    """Render spend analysis chart."""
-    if 'invoice_date' in df.columns and 'unit_price' in df.columns:
-
-        spend_analysis = df.groupby('invoice_date')['unit_price'].sum().reset_index()
-
-        fig = px.bar(
-            spend_analysis,
-            x='invoice_date',
-            y='unit_price',
-            title="Spend by Month",
-            color_discrete_sequence=['#44A4F3']
-        )
-        max_value = spend_analysis['unit_price'].max()
-        fig.update_layout(
-            xaxis=dict(
-                title_text=""
-            ),
-            yaxis=dict(
-                title_text="",
-            ),
-            title=dict(
-                x=0.5,                # center align title horizontally
-                xanchor='center',
-                font=dict(size=14)
-            ),
-            margin=dict(l=0, r=20, t=80, b=40),  # cut margins
-            height=300,   # smaller chart height
-            )
-        st.plotly_chart(fig, width='stretch')
-
 def render_spend_by_business_unit(df: pd.DataFrame) -> None:
     """Render top suppliers bar chart."""
-    spend_bu = df.groupby('business_unit')['unit_price'].sum().nlargest(5).reset_index()
+    spend_bu = df.groupby('business_unit')['total_amount'].sum().nlargest(5).reset_index()
     fig = px.bar(
         spend_bu,
-        x='unit_price',
+        x='total_amount',
         y='business_unit',
         orientation='h',
-        title="Top 5 Business Units by Spend"
+        title="Top 5 Business Units by Spend",
+        color_discrete_sequence=['#717560']
     )
-    max_value = spend_bu['unit_price'].max()
+    max_value = spend_bu['total_amount'].max()
     fig.update_layout(
         xaxis=dict(
             range=[0, max_value * 1.1],
@@ -425,15 +400,16 @@ def render_spend_by_business_unit(df: pd.DataFrame) -> None:
 
 def render_top_item(df: pd.DataFrame) -> None:
     """Render top suppliers bar chart."""
-    item_totalamount = df.groupby('invoice_item_type')['unit_price'].sum().reset_index()
+    item_totalamount = df.groupby('invoice_item_type')['total_amount'].sum().reset_index()
     fig = px.bar(
         item_totalamount,
-        x='unit_price',
+        x='total_amount',
         y='invoice_item_type',
         orientation='h',
-        title="Invoice type by Spend"
+        title="Invoice type by Spend",
+        color_discrete_sequence=['#9f4f36']
     )
-    max_value = item_totalamount['unit_price'].max()
+    max_value = item_totalamount['total_amount'].max()
     fig.update_layout(
         xaxis=dict(
             range=[0, max_value * 1.1],
@@ -487,10 +463,9 @@ def load_transaction_data() -> pd.DataFrame:
     """Load transaction data for reporting."""
     with get_db_connection() as conn:
         query = """
-            SELECT 
-                *
+            SELECT sd.*, cd.category_1, cd.category_2, cd.category_3, cd.category_4, cd.category_5
             FROM spend_data as sd
-            left join categorized_data as cd
-            on sd.item_description = cd.item_description
+            LEFT JOIN categorized_data as cd
+            ON sd.item_description = cd.item_description
         """
         return pd.read_sql_query(query, conn)

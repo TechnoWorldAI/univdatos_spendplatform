@@ -75,6 +75,29 @@ def init_db():
                     password TEXT NOT NULL
                 )""")
 
+    # Error Table (Error)
+    c.execute("""CREATE TABLE IF NOT EXISTS error_table (
+                    error_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    error_transaction TEXT,
+                    error_type TEXT,
+                    error_message TEXT,
+                    error_status TEXT,
+                    error_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    is_resolved INTEGER DEFAULT 0,
+                    resolved_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )""")
+
+    # Rules Table (Rules)
+    c.execute("""CREATE TABLE IF NOT EXISTS rule_table (
+                    rule_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    rule_description TEXT,
+                    rule_data TEXT,
+                    rule_condition TEXT,
+                    active_flag INTEGER DEFAULT 1,
+                    created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    is_deleted INTEGER DEFAULT 0
+                )""")
+
     conn.commit()
     conn.close()
 

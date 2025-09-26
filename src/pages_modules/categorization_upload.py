@@ -19,11 +19,13 @@ def render_page():
     if file:
         try:
             df = pd.read_csv(file) if file.name.endswith("csv") else pd.read_excel(file)
-            st.dataframe(df)
+            #st.dataframe(df)
+            render_styled_table(df)
+            st.markdown("<div style='font-size:1.2em; color:#444; margin-bottom:18px;'>  </div>", unsafe_allow_html=True)
         except Exception as e:
             st.error(f"Error reading file: {e}")
             return
-        if st.button("Save to DB"):
+        if st.button("Save Category"):
             if 'S No' in df.columns:
                 df = df.drop(columns=['S No'])
             insert_data("category_data", df)
@@ -37,11 +39,46 @@ def render_page():
                     edited_df.to_sql("category_data", conn, if_exists="append", index=False)
                 st.success("Edits saved to category_data table!")
 
-# Do NOT call render_page() here.
-# The main app should call render_page() only if the user is authenticated:
-# Example usage in app.py:
-# if st.session_state.get('authenticated', False):
-#     from src.pages_modules.categorization_upload import render_page
-#     render_page()
+def render_styled_table(df):
+
+
+    styled_df = (
+        df.style
+        .hide(axis="index")
+        .set_table_styles([
+            {"selector": "th", "props": [
+                ("background-color", "#1D2951"),
+                ("color", "white"),
+                ("text-align", "center"),
+                ("border", "1px solid black"),
+                ("padding", "1px"),
+                ("font-size", "0.85em"),
+                ("position", "sticky"),
+                ("top", "2"),
+                ("z-index", "2"),
+                ("width", "20%")
+            ]},
+            {"selector": "td", "props": [
+                ("border", "1px solid black"),
+                ("text-align", "center"),
+                ("padding", "4px"),
+                ("font-size", "0.8em")
+            ]},
+            {"selector": "table", "props": [
+                ("border-collapse", "collapse"),
+                ("border-radius", "6px"),
+                ("width", "100%")
+            ]}
+        ], overwrite=False)  # 👈 ensure it merges styles properly
+    )
+
+    # Wrap with scrollable container
+    html_table = styled_df.to_html(escape=False)
+    scrollable_html = f"""
+    <div style="max-height:400px; overflow-y:auto; overflow-x:auto; border:1px solid #ddd; padding:5px;">
+        {html_table}
+    </div>
+    """
+    st.write(scrollable_html, unsafe_allow_html=True)
 
 

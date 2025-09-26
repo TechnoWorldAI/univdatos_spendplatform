@@ -51,23 +51,24 @@ def render_page():
         results.append([item_desc] + cat_levels)
 
     categorized_df = pd.DataFrame(results, columns=["item_description","category_1","category_2","category_3","category_4","category_5"])
-    edited_df = st.data_editor(categorized_df, num_rows="dynamic", use_container_width=True)
+    edited_df = st.data_editor(
+        categorized_df,
+        num_rows="dynamic",
+        use_container_width=True,
+        column_config={
+            "item_description": st.column_config.TextColumn("Item Description", help="Description of the item"),
+            "category_1": st.column_config.TextColumn("Category 1", help="Top-level category"),
+            "category_2": st.column_config.TextColumn("Category 2", help="Second-level category"),
+            "category_3": st.column_config.TextColumn("Category 3", help="Third-level category"),
+            "category_4": st.column_config.TextColumn("Category 4", help="Fourth-level category"),
+            "category_5": st.column_config.TextColumn("Category 5", help="Keywords or fifth-level category")
+        }
+    )
 
     # Save edits to DB
     if st.button("Save Categorized Data", key="save_categorized_data_btn_cat_edit"):
         insert_data("categorized_data", edited_df)
         st.success("Categorized data saved!")
 
-    # Delete selected rows
-    selected_rows = st.multiselect("Select rows to delete", edited_df.index.tolist(), key="delete_categorized_rows")
-    if st.button("Delete Selected Rows", key="delete_categorized_data_btn_cat"):
-        df_after_delete = edited_df.drop(index=selected_rows)
-        # Overwrite the table with remaining data
-        conn = sqlite3.connect(DB_NAME)
-        conn.execute("DELETE FROM categorized_data")
-        df_after_delete.to_sql("categorized_data", conn, if_exists="append", index=False)
-        conn.close()
-        st.success("Selected rows deleted from categorized_data table!")
-
 # ✅ Run inside Streamlit page
-render_page()
+#render_page()
