@@ -181,9 +181,6 @@ def render_styled_table(df):
                 ("border", "1px solid black"),
                 ("padding", "1px"),
                 ("font-size", "0.85em"),
-                ("position", "sticky"),
-                ("top", "2"),
-                ("z-index", "2"),
                 ("width", "8%")
             ]},
             {"selector": "td", "props": [
@@ -201,13 +198,12 @@ def render_styled_table(df):
     )
 
     # Wrap with scrollable container
-    html_table = styled_df.to_html(escape=False)
-    scrollable_html = f"""
-    <div style="max-height:400px; overflow-y:auto; overflow-x:auto; border:1px solid #ddd; padding:5px;">
-        {html_table}
-    </div>
-    """
-    st.write(scrollable_html, unsafe_allow_html=True)
+    html_table = styled_df.to_html(escape=False, table_attributes='class="dataframe"')
+
+    # Wrap in scrollable container
+    scrollable_html = f'<div style="max-height:400px; overflow:auto; border:0px solid #ddd; padding:5px;">{html_table}</div>'
+
+    st.markdown(scrollable_html, unsafe_allow_html=True)
 
 def process_data(df: pd.DataFrame, validation_results: dict = None) -> None:
     """Process and save validated data to database. Also log validation results to error_table."""

@@ -125,7 +125,12 @@ def render_styled_table(df):
             ]}
         ])
     )
-    st.write(styled_df.to_html(escape=False), unsafe_allow_html=True)
+    html_table = styled_df.to_html(escape=False, table_attributes='class="dataframe"')
+
+    # Wrap in scrollable container
+    scrollable_html = f'<div style="max-height:300px; overflow:auto; border:0px solid #ddd; padding:5px;">{html_table}</div>'
+
+    st.markdown(scrollable_html, unsafe_allow_html=True)
 
 
 def load_errors():

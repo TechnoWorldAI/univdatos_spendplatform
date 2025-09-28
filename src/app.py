@@ -39,11 +39,10 @@ body, [data-testid="stAppViewContainer"], [data-testid="stAppViewBlockContainer"
         display: flex;
         justify-content: flex-start;
         align-items: center;
+        margin-top: -12px;
+        margin-bottom: -1px;
 }
-[data-testid="stSidebar"] .stButton > button:hover {
-        box-shadow: none !important;
-        background: rgba(0,0,0,0.04) !important;
-}
+
 [data-testid="stSidebar"] .stButton > button:active {
         transform: translateY(1px);
         box-shadow: none !important;
@@ -132,8 +131,8 @@ def sidebar_navigation():
             username = user_info.get('username', 'User')
             user_role = user_info.get('role', 'Unknown')
             st.markdown(f"<span style='color:#fff; font-weight: bold; display:block;'>👤 {username}</span>", unsafe_allow_html=True)
-            st.markdown(f"<span style='color:#fff; font-size:0.85em; padding-left:22px; margin-bottom:-8px;'> {user_role}</span>", unsafe_allow_html=True)
-            st.markdown("<hr style='margin:6px 0 12px 0; border-top:1px solid #fff; opacity:0.25;'>", unsafe_allow_html=True)
+            st.markdown(f"<span style='color:#fff; font-size:0.85em; padding-left:22px; margin-bottom:-1px;'> {user_role}</span>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin:6px 0 18px 0; border-top:1px solid #fff; opacity:0.25;'>", unsafe_allow_html=True)
             logger.debug(f"User info displayed | Data: {{'username': '{username}', 'role': '{user_role}'}}")
             
             # Initialize services
@@ -200,7 +199,7 @@ def sidebar_navigation():
             #        st.rerun()
 
             # Logout button
-            st.markdown("<hr style='margin:6px 0 12px 0; border-top:1px solid #fff; opacity:0.25;'>", unsafe_allow_html=True)
+            st.markdown("<hr style='margin:0px 0 12px 0; border-top:1px solid #fff; opacity:0.25;'>", unsafe_allow_html=True)
             if st.button("🚪 Logout", key="logout",width='stretch'):
                 auth_service.logout()
                 st.rerun()

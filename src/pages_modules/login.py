@@ -30,9 +30,9 @@ def render_page() -> None:
                 border-radius: 16px;
                 box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
                 padding: 32px 24px 24px 24px;
-                margin: 60px auto 0 auto;
+                margin: 10px auto 0 auto;
                 max-width: 350px;
-                color: #fff;
+                color: #1D2951;
             }
             label, .stTextInput label, .stPasswordInput label {
                 color: #fff !important;
@@ -46,12 +46,12 @@ def render_page() -> None:
                 margin-bottom: 0px;
                 font-size: 1em;
             }
-            button[kind="primary"], button[data-testid="baseButton-primary"], .stButton > button {
+            button[data-testid="baseButton-primary"], .stButton > button {
                 background: #2176ae !important;
-                color: #fff !important;
+                color: #2176ae !important;
                 border-radius: 8px;
                 border: none;
-                box-shadow: 0 2px 8px rgba(31, 38, 135, 0.2);
+                box-shadow: 1px 2px 8px rgba(31, 38, 135, 0.2);
                 font-size: 1.1em;
                 padding: 10px 0;
                 margin-top: 10px;
@@ -60,26 +60,16 @@ def render_page() -> None:
                 margin-right: auto;
                 transition: none !important;
             }
-            input[type="checkbox"] {
-                accent-color: #5ec6e7;
-                width: 18px;
-                height: 18px;
-                border-radius: 4px;
-                margin-right: 8px;
-            }
-            </style>''', unsafe_allow_html=True)
+            </style>
+        ''', unsafe_allow_html=True)
+
         debug_logger.info("Rendering login page")
         
         # Clear sidebar completely
         st.sidebar.empty()
         with st.sidebar:
             st.markdown("### 🔒 Please Log In")
-            # st.markdown("Sidebar cleared for unauthenticated users")  
-        
-        
-        # st.markdown("**This is the NEW refactored application - PORT 8502**")
-        # st.success("✅ SUCCESS: Sidebar navigation is hidden before authentication!")
-        
+
         with st.form("login_form"):
             st.title("Member Login")
             username = st.text_input("Username")
@@ -112,18 +102,6 @@ def render_page() -> None:
                     debug_logger.exception("Unexpected error during authentication", e, {"username": username})
                     show_error_block("Login Error", e)
         
-    # Demo credentials help (hidden for now)
-    # with st.expander("ℹ️ Demo Credentials"):
-    #         st.markdown("""
-    #         The demo password policy has been updated for this environment.
-    #
-    #         Use the pattern: `username1234` (for example, `admin` -> `admin1234`).
-    #
-    #         - **Admin**: `admin` / `admin1234`
-    #         - **Spend Manager**: `manager` / `manager1234`
-    #         - **Data Analyst**: `analyst` / `analyst1234`
-    #         """)
-            
     except Exception as e:
         debug_logger.exception("Error rendering login page", e)
         show_error_block("Login Page Error", e)
