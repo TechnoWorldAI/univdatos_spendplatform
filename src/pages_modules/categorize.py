@@ -13,7 +13,7 @@ def render_page():
     st.markdown("<div style='font-size:1.2em; color:#444; margin-bottom:18px;'>Categorize Items</div>", unsafe_allow_html=True)
 
     conn = sqlite3.connect(DB_NAME)
-    spend_df = pd.read_sql("SELECT item_description FROM spend_data", conn)
+    spend_df = pd.read_sql("SELECT item_description FROM spend_data LIMIT 100", conn)
     cat_df = pd.read_sql("SELECT * FROM category_data", conn)
     conn.close()
 
@@ -62,12 +62,12 @@ def render_page():
 
 def render_styled_table(df):
     column_mapping = {
-        "Item Description": "Item Description",
-        "Category 1": "Category 1",
-        "Category 2": "Category 2",
-        "Category 3": "Category 3",
-        "Category 4": "Category 4",
-        "Category 5": "Category 5"
+        "item_description": "Item Description",
+        "category_1": "Category 1",
+        "category_2": "Category 2",
+        "category_3": "Category 3",
+        "category_4": "Category 4",
+        "category_5": "Category 5"
     }
 
     df = df.rename(columns=column_mapping)
