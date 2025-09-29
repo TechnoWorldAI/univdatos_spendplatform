@@ -69,6 +69,6 @@ def render_page():
     # --- Display Selected Dashboard ---
     img_path, caption = dashboard_images[selected_idx]
     if os.path.exists(img_path):
-        st.image(img_path, width=850, caption=caption)
+        st.image(img_path, width="stretch", caption=caption)
     else:
         st.warning(f"Dashboard not found: {caption}")
