@@ -103,7 +103,7 @@ def render_styled_table(df):
     html_table = styled_df.to_html(escape=False, table_attributes='class="dataframe"')
 
     # Wrap in scrollable container
-    scrollable_html = f'<div style="max-height:400px; overflow:auto; border:0px solid #ddd; padding:5px;">{html_table}</div>'
+    scrollable_html = f'<div style="max-height:500px; overflow:auto; border:0px solid #ddd; padding:5px;">{html_table}</div>'
 
     st.markdown(scrollable_html, unsafe_allow_html=True)
 # ✅ Run inside Streamlit page
