@@ -75,7 +75,7 @@ st.markdown(f"""
         {logo_img_tag}
     </div>
     <div style='width:100%; display:flex; justify-content:center; align-items:center; height:100%;'>
-        <span style='font-size:1.8em; color:#002366; font-weight:600; text-align:center;'>Spend Analysis Platform</span>
+        <span style='font-size:1.8em; color:#002366; font-weight:600; text-align:center;'>SpendMaster</span>
     </div>
     <div style='position: absolute; right: 0; top: 50%; transform: translateY(-50%);'>
         {contact_img_tag}
